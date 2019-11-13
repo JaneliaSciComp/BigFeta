@@ -46,13 +46,12 @@ def calculate_processing_chunk(fargs):
 
         sorter = np.argsort(tile_ids)
 
-
         # get point matches
         nmatches = utils.get_matches(
-                pair['section1'],
-                pair['section2'],
-                args['pointmatch'],
-                dbconnection)
+            pair['section1'],
+            pair['section2'],
+            args['pointmatch'],
+            dbconnection)
 
         # extract IDs for fast checking
         pid_set = set(m['pId'] for m in nmatches)
@@ -78,15 +77,15 @@ def calculate_processing_chunk(fargs):
         qids = np.array([m['qId'] for m in matches])
 
         logger.debug(
-                "loaded %d matches, using %d, "
-                "for groupIds %s and %s in %0.1f sec "
-                "using interface: %s" % (
-                    len(pid_set.union(qid_set)),
-                    len(matches),
-                    pair['section1'],
-                    pair['section2'],
-                    time.time() - t0,
-                    args['pointmatch']['db_interface']))
+            "loaded %d matches, using %d, "
+            "for groupIds %s and %s in %0.1f sec "
+            "using interface: %s" % (
+                len(pid_set.union(qid_set)),
+                len(matches),
+                pair['section1'],
+                pair['section2'],
+                time.time() - t0,
+                args['pointmatch']['db_interface']))
 
         # for the given point matches, these are the indices in tile_ids
         # these determine the column locations in A for each tile pair
@@ -113,13 +112,13 @@ def calculate_processing_chunk(fargs):
                 tforms)
 
             pblock, qblock, weights, rhs = utils.blocks_from_tilespec_pair(
-                    tspecs[pinds[k]],
-                    tspecs[qinds[k]],
-                    match,
-                    col_ind[pinds[k]],
-                    col_ind[qinds[k]],
-                    ncol,
-                    args['matrix_assembly'])
+                tspecs[pinds[k]],
+                tspecs[qinds[k]],
+                match,
+                col_ind[pinds[k]],
+                col_ind[qinds[k]],
+                ncol,
+                args['matrix_assembly'])
 
             if pblock is None:
                 continue
@@ -141,7 +140,7 @@ def calculate_processing_chunk(fargs):
 
 
 def tilepair_weight(z1, z2, matrix_assembly):
-    """get weight factor between two tilepairs
+    """Get z-based weight factor
 
     Parameters
     ----------
@@ -194,8 +193,8 @@ class BigFeta(argschema.ArgSchemaParser):
         # montage
         if self.args['solve_type'] == 'montage':
             zvals = utils.get_z_values_for_stack(
-                    self.args['input_stack'],
-                    zvals)
+                self.args['input_stack'],
+                zvals)
             for z in zvals:
                 self.results = self.assemble_and_solve(np.array([z]))
 
@@ -263,11 +262,11 @@ class BigFeta(argschema.ArgSchemaParser):
 
         if results:
             utils.update_tilespecs(
-                    self.resolvedtiles,
-                    results['x'])
+                self.resolvedtiles,
+                results['x'])
             scales = np.array(
-                    [t.tforms[-1].scale
-                     for t in self.resolvedtiles.tilespecs])
+                [t.tforms[-1].scale
+                 for t in self.resolvedtiles.tilespecs])
             smn = scales.mean(axis=0)
             ssd = scales.std(axis=0)
             logger.info("\n scales: %0.2f +/- %0.2f, %0.2f +/- %0.2f" % (
@@ -275,13 +274,13 @@ class BigFeta(argschema.ArgSchemaParser):
             if self.args['output_mode'] == 'stack':
                 res_for_file = {a: b for a, b in results.items() if a != 'x'}
                 self.args['output_stack'] = utils.write_to_new_stack(
-                        self.resolvedtiles,
-                        self.args['output_stack'],
-                        self.args['render_output'],
-                        self.args['overwrite_zlayer'],
-                        # for file output, these go too
-                        self.args,
-                        res_for_file)
+                    self.resolvedtiles,
+                    self.args['output_stack'],
+                    self.args['render_output'],
+                    self.args['overwrite_zlayer'],
+                    # for file output, these go too
+                    self.args,
+                    res_for_file)
                 if self.args['render_output'] == 'stdout':
                     logger.info(message)
             del assemble_result['x']
@@ -329,10 +328,10 @@ class BigFeta(argschema.ArgSchemaParser):
 
             r = f.get('resolved_tiles')[()][0]
             rname = os.path.join(
-                    os.path.dirname(filename),
-                    r)
+                os.path.dirname(filename),
+                r)
             self.resolvedtiles = renderapi.resolvedtiles.ResolvedTiles(
-                    json=jsongz.load(rname))
+                json=jsongz.load(rname))
 
             logger.info(
                 "\n loaded %d tile specs from %s" % (
@@ -340,10 +339,10 @@ class BigFeta(argschema.ArgSchemaParser):
                     filename))
 
             utils.ready_transforms(
-                    self.resolvedtiles.tilespecs,
-                    file_args['transformation'],
-                    file_args['fullsize_transform'],
-                    file_args['poly_order'])
+                self.resolvedtiles.tilespecs,
+                file_args['transformation'],
+                file_args['fullsize_transform'],
+                file_args['poly_order'])
 
         assemble_result['reg'] = sparse.diags([reg], [0], format='csr')
 
@@ -388,7 +387,7 @@ class BigFeta(argschema.ArgSchemaParser):
                     assemble_result['rhs'],
                     rhs[1].reshape(-1, 1)))
             assemble_result['weights'] = sparse.diags(
-                    [weights], [0], format='csr')
+                [weights], [0], format='csr')
 
         return assemble_result, results
 
@@ -446,14 +445,14 @@ class BigFeta(argschema.ArgSchemaParser):
 
         # the processing will be distributed according to these pairs
         pairs = utils.determine_zvalue_pairs(
-                resolved,
-                self.args['matrix_assembly']['depth'])
+            resolved,
+            self.args['matrix_assembly']['depth'])
 
         # the column indices for each tilespec
         col_ind = np.cumsum(
-                np.hstack((
-                    [0],
-                    [t.tforms[-1].DOF_per_tile for t in resolved.tilespecs])))
+            np.hstack((
+                [0],
+                [t.tforms[-1].DOF_per_tile for t in resolved.tilespecs])))
 
         fargs = [[
             pair,
@@ -468,9 +467,9 @@ class BigFeta(argschema.ArgSchemaParser):
                 yield l[i:i + n]
 
         with renderapi.client.WithPool(self.args['n_parallel_jobs']) as pool:
-            results =  pool.map(
-                        calculate_processing_chunk,
-                        list(chunks(fargs, self.args['processing_chunk_size'])))
+            results = pool.map(
+                calculate_processing_chunk,
+                list(chunks(fargs, self.args['processing_chunk_size'])))
         results = np.concatenate([i for i in results if i])
 
         func_result['x'] = []
@@ -478,18 +477,18 @@ class BigFeta(argschema.ArgSchemaParser):
         for t in np.array(resolved.tilespecs):
             func_result['x'].append(t.tforms[-1].to_solve_vec())
             reg.append(
-                    t.tforms[-1].regularization(self.args['regularization']))
+                t.tforms[-1].regularization(self.args['regularization']))
 
         if len(func_result['x']) == 0:
             raise utils.BigFetaException(
-                    "no matrix was assembled. Likely scenarios: "
-                    "your tilespecs and pointmatches do not key "
-                    " to each other in group or tileId. Or, your match "
-                    " collection is empty")
+                "no matrix was assembled. Likely scenarios: "
+                "your tilespecs and pointmatches do not key "
+                " to each other in group or tileId. Or, your match "
+                " collection is empty")
 
         func_result['x'] = np.concatenate(func_result['x'])
         func_result['reg'] = sparse.diags(
-                [np.concatenate(reg)], [0], format='csr')
+            [np.concatenate(reg)], [0], format='csr')
 
         if self.args['output_mode'] == 'hdf5':
             results = np.array(results)
@@ -514,7 +513,7 @@ class BigFeta(argschema.ArgSchemaParser):
 
         else:
             func_result['A'], func_result['weights'], func_result['rhs'], _ = \
-                    utils.concatenate_results(results)
+                utils.concatenate_results(results)
 
         return func_result
 
