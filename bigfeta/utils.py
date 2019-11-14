@@ -308,21 +308,39 @@ def get_matches(iId, jId, collection, dbconnection):
     if collection['db_interface'] == 'file':
         matches = jsongz.load(collection['input_file'])
         matches = [m for m in matches
-                   if set([m['pGroupId'], m['qGroupId']]) & set([iId, jId])]
+                   if set([m['pGroupId'], m['qGroupId']]) == set([iId, jId])]
     if collection['db_interface'] == 'render':
         with requests.Session() as s:
             s.mount('http://', requests.adapters.HTTPAdapter(max_retries=5))
             if iId == jId:
-                for name in collection['name']:
-                    matches.extend(renderapi.pointmatch.get_matches_within_group(
+                for i, name in enumerate(collection['name']):
+                    temp_matches = []
+                    temp_matches.extend(renderapi.pointmatch.get_matches_within_group(
                         name,
                         iId,
                         owner=collection['owner'],
                         render=dbconnection,
                         session=s))
+                    if 'collection_weights' in collection:
+                        cw = collection['collection_weights'][i]
+                    else:
+                        cw = 1
+                    for m in temp_matches:
+                        if 'matches' in m:
+                            if 'w' not in m['matches']:
+                                if 'matchCount' in m:
+                                    m['matches']['w'] = [cw]*m['matchCount']
+                                else:
+                                    m['matches']['w'] = [cw] * \
+                                        len(m['matches']['p'][0])
+                            elif cw != 1:
+                                m['matches']['w'] = [
+                                    w*cw for w in m['matches']['w']]
+                    matches.extend(temp_matches)
             else:
-                for name in collection['name']:
-                    matches.extend(
+                for i, name in enumerate(collection['name']):
+                    temp_matches = []
+                    temp_matches.extend(
                         renderapi.pointmatch.get_matches_from_group_to_group(
                             name,
                             iId,
@@ -330,6 +348,23 @@ def get_matches(iId, jId, collection, dbconnection):
                             owner=collection['owner'],
                             render=dbconnection,
                             session=s))
+                    if 'collection_weights' in collection:
+                        cw = collection['collection_weights'][i]
+                    else:
+                        cw = 1
+                    for m in temp_matches:
+                        if 'matches' in m:
+                            if 'w' not in m['matches']:
+                                if 'matchCount' in m:
+                                    m['matches']['w'] = [cw]*m['matchCount']
+                                else:
+                                    m['matches']['w'] = [cw] * \
+                                        len(m['matches']['p'][0])
+                            elif cw != 1:
+                                m['matches']['w'] = [
+                                    w*cw for w in m['matches']['w']]
+                    matches.extend(temp_matches)
+
     if collection['db_interface'] == 'mongo':
         for dbconn in dbconnection:
             cursor = dbconn.collection.find(

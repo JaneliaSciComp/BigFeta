@@ -208,6 +208,29 @@ class pointmatch(input_db):
         default='pointmatch',
         description="'stack' or 'pointmatch'")
 
+    collection_weights = List(
+        Float,
+        cli_as_single_argument=True,
+        required=False,
+        description=("Weights of the collections")
+    )
+
+    @mm.pre_load
+    def tolist(self, data):
+        if "collection_weights" in data:
+            if not isinstance(data['collection_weights'], list):
+                data['collection_weights'] = [data['collection_weights']]
+
+    @mm.post_load
+    def validate_data(self, data):
+        if 'name' in data and 'collection_weights' in data:
+            if len(data['collection_weights']) != len(data['name']):
+                raise mm.ValidationError(
+                    "collection_weights must be same length as name")
+        if 'collection_weights' in data and 'name' not in data:
+            raise mm.ValidationError(
+                "Doesn't make sense to have collection_weights but not name")
+
 
 class input_stack(input_db):
     collection_type = String(
