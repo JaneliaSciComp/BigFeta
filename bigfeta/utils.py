@@ -848,12 +848,18 @@ def blocks_from_tilespec_pair(
         ppts, qpts, w = AlignerRotationModel.preprocess(ppts, qpts, w)
 
     if ppts.shape[0] > matrix_assembly['npts_max']:
-        if matrix_assembly['choose_random']:
+        if matrix_assembly['choose_random'] or matrix_assembly['choose_best']:
             ind = np.arange(ppts.shape[0])
             np.random.shuffle(ind)
-            ind = ind[0: matrix_assembly['npts_max']]
+            if matrix_assembly['choose_best']:
+                # Sort via mergesort since it's stable,
+                # so preserve this shuffle.
+                # Otherwise we may end up biasing it
+                ind = ind[np.argsort(w[ind], kind='mergesort')]
+            ind = ind[0:matrix_assembly['npts_max']]
         else:
             ind = np.arange(matrix_assembly['npts_max'])
+
         ppts = ppts[ind, :]
         qpts = qpts[ind, :]
         w = w[ind]
