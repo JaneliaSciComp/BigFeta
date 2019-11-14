@@ -864,6 +864,10 @@ def blocks_from_tilespec_pair(
         qpts = qpts[ind, :]
         w = w[ind]
 
+    if matrix_assembly['balanced']:
+        weight_sum = np.sum(w)
+        w = [i/weight_sum for i in w]
+
     pblock, weights, prhs = ptspec.tforms[-1].block_from_pts(
         ppts, w, pcol, ncol)
     qblock, _, qrhs = qtspec.tforms[-1].block_from_pts(
