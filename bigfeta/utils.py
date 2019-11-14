@@ -364,6 +364,7 @@ def get_matches(iId, jId, collection, dbconnection):
                                 m['matches']['w'] = [
                                     w*cw for w in m['matches']['w']]
                     matches.extend(temp_matches)
+
     if collection['db_interface'] == 'mongo':
         for dbconn in dbconnection:
             cursor = dbconn.collection.find(
@@ -882,15 +883,25 @@ def blocks_from_tilespec_pair(
         ppts, qpts, w = AlignerRotationModel.preprocess(ppts, qpts, w)
 
     if ppts.shape[0] > matrix_assembly['npts_max']:
-        if matrix_assembly['choose_random']:
+        if matrix_assembly['choose_random'] or matrix_assembly['choose_best']:
             ind = np.arange(ppts.shape[0])
             np.random.shuffle(ind)
-            ind = ind[0: matrix_assembly['npts_max']]
+            if matrix_assembly['choose_best']:
+                # Sort via mergesort since it's stable,
+                # so preserve this shuffle.
+                # Otherwise we may end up biasing it
+                ind = ind[np.argsort(w[ind], kind='mergesort')]
+            ind = ind[0:matrix_assembly['npts_max']]
         else:
             ind = np.arange(matrix_assembly['npts_max'])
+
         ppts = ppts[ind, :]
         qpts = qpts[ind, :]
         w = w[ind]
+
+    if matrix_assembly['balanced']:
+        weight_sum = np.sum(w)
+        w = [i/weight_sum for i in w]
 
     pblock, weights, prhs = ptspec.tforms[-1].block_from_pts(
         ppts, w, pcol, ncol)
