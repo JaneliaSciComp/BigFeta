@@ -3,8 +3,8 @@
 from argschema import ArgSchema
 from argschema.schemas import DefaultSchema
 from argschema.fields import (
-        String, Int, Boolean, Nested, Float,
-        List, InputFile, OutputFile)
+    String, Int, Boolean, Nested, Float,
+    List, InputFile, OutputFile)
 import marshmallow as mm
 import numpy as np
 
@@ -114,8 +114,8 @@ class matrix_assembly(DefaultSchema):
                     len(data['explicit_weight_by_depth']) !=
                     len(data['depth'])):
                 raise mm.ValidationError(
-                        "matrix_assembly['explicit_weight_by_depth'] "
-                        "must be the same length as matrix_assembly['depth']")
+                    "matrix_assembly['explicit_weight_by_depth'] "
+                    "must be the same length as matrix_assembly['depth']")
     cross_pt_weight = Float(
         default=1.0,
         required=False,
@@ -142,6 +142,11 @@ class matrix_assembly(DefaultSchema):
         default=True,
         required=False,
         description='cross section point match weighting fades with z')
+
+    balanced = Boolean(
+        default=False,
+        required=False,
+        description='Set existing weights to all be the same')
 
 
 class regularization(DefaultSchema):
@@ -311,32 +316,32 @@ class BigFetaSchema(ArgSchema):
         description=("anything besides the default will "
                      "show all the render stderr/stdout"))
     input_stack = Nested(
-            input_stack,
-            description=("specifies the origin of the tilespecs."))
+        input_stack,
+        description=("specifies the origin of the tilespecs."))
     output_stack = Nested(
-            output_stack,
-            description=("specifies the destination of the tilespecs."))
+        output_stack,
+        description=("specifies the destination of the tilespecs."))
     pointmatch = Nested(
-            pointmatch,
-            description=("specifies the origin of the point correspondences"))
+        pointmatch,
+        description=("specifies the origin of the point correspondences"))
     hdf5_options = Nested(
-            hdf5_options,
-            description=("options invoked if output_mode is \"hdf5\""))
+        hdf5_options,
+        description=("options invoked if output_mode is \"hdf5\""))
     matrix_assembly = Nested(
-            matrix_assembly,
-            description=("options that control which correspondences are"
-                         " included in the matrix equation and their weights"))
+        matrix_assembly,
+        description=("options that control which correspondences are"
+                     " included in the matrix equation and their weights"))
     regularization = Nested(
-            regularization,
-            description=("options that contol the regularization of different"
-                         " types of variables in the solve"))
+        regularization,
+        description=("options that contol the regularization of different"
+                     " types of variables in the solve"))
     transform_apply = List(
-            Int,
-            default=[],
-            missing=[],
-            description=("tilespec.tforms[i].tform() for i in transform_apply "
-                         "will be performed on the matches before matrix "
-                         "assembly."))
+        Int,
+        default=[],
+        missing=[],
+        description=("tilespec.tforms[i].tform() for i in transform_apply "
+                     "will be performed on the matches before matrix "
+                     "assembly."))
 
     @mm.post_load
     def validate_data(self, data):
@@ -345,8 +350,8 @@ class BigFetaSchema(ArgSchema):
             n = len(data['regularization']['poly_factors'])
             if n != data['poly_order'] + 1:
                 raise mm.ValidationError(
-                        "regularization.poly_factors must be a list"
-                        " of length poly_order + 1")
+                    "regularization.poly_factors must be a list"
+                    " of length poly_order + 1")
 
 
 class BigFetaPlotSchema(BigFetaSchema):

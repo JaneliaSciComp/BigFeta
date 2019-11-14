@@ -53,41 +53,41 @@ def make_dbconnection(collection, which='tile', interface=None):
     if interface == 'mongo':
         mongoconn = collections.namedtuple('mongoconn', 'client collection')
         client = MongoClient(
-                host=collection['mongo_host'],
-                port=collection['mongo_port'])
+            host=collection['mongo_host'],
+            port=collection['mongo_port'])
         if collection['mongo_userName'] != '':
             client = MongoClient(
-                    host=collection['mongo_host'],
-                    port=collection['mongo_port'],
-                    username=collection['mongo_userName'],
-                    authSource=collection['mongo_authenticationDatabase'],
-                    password=collection['mongo_password'])
+                host=collection['mongo_host'],
+                port=collection['mongo_port'],
+                username=collection['mongo_userName'],
+                authSource=collection['mongo_authenticationDatabase'],
+                password=collection['mongo_password'])
 
         if collection['collection_type'] == 'stack':
             # for getting shared transforms, which='transform'
             mongo_collection_name = (
-                    collection['owner'] +
-                    '__' + collection['project'] +
-                    '__' + collection['name'][0] +
-                    '__'+which)
+                collection['owner'] +
+                '__' + collection['project'] +
+                '__' + collection['name'][0] +
+                '__'+which)
             dbconnection = mongoconn(
-                    client=client,
-                    collection=client.render[mongo_collection_name])
+                client=client,
+                collection=client.render[mongo_collection_name])
         elif collection['collection_type'] == 'pointmatch':
             mongo_collection_name = [(
-                    collection['owner'] +
-                    '__' + name) for name in collection['name']]
+                collection['owner'] +
+                '__' + name) for name in collection['name']]
             dbconnection = [mongoconn(
-                                client=client,
-                                collection=client.match[name])
-                            for name in mongo_collection_name]
+                client=client,
+                collection=client.match[name])
+                for name in mongo_collection_name]
     elif interface == 'render':
         dbconnection = renderapi.connect(**collection)
     elif interface == 'file':
         return None
     else:
         raise BigFetaException(
-                "invalid interface in make_dbconnection()")
+            "invalid interface in make_dbconnection()")
     return dbconnection
 
 
@@ -109,9 +109,9 @@ def determine_zvalue_pairs(resolved, depths):
     """
     # create all possible pairs, given zvals and depth
     zvals, uind, inv = np.unique(
-            [t.z for t in resolved.tilespecs],
-            return_index=True,
-            return_inverse=True)
+        [t.z for t in resolved.tilespecs],
+        return_index=True,
+        return_inverse=True)
     sections = [resolved.tilespecs[i].layout.sectionId for i in uind]
     index = np.arange(len(resolved.tilespecs))
     pairs = []
@@ -151,10 +151,10 @@ def ready_transforms(tilespecs, tform_name, fullsize, order):
         # for first starts with thin plate spline
         if ((tform_name == 'ThinPlateSplineTransform') &
                 (not isinstance(
-                        t.tforms[-1],
-                        renderapi.transform.ThinPlateSplineTransform))):
+                    t.tforms[-1],
+                    renderapi.transform.ThinPlateSplineTransform))):
             xt, yt = np.meshgrid(
-                    np.linspace(0, t.width, 3), np.linspace(0, t.height, 3))
+                np.linspace(0, t.width, 3), np.linspace(0, t.height, 3))
             src = np.vstack((xt.flatten(), yt.flatten())).transpose()
             dst = t.tforms[-1].tform(src)
             t.tforms[-1] = renderapi.transform.ThinPlateSplineTransform()
@@ -194,12 +194,12 @@ def get_resolved_from_z(stack, tform_name, fullsize, order, z):
             with requests.Session() as s:
                 s.mount('http://', requests.adapters.HTTPAdapter(max_retries=5))
                 resolved = renderapi.resolvedtiles.get_resolved_tiles_from_z(
-                        stack['name'][0],
-                        float(z),
-                        render=dbconnection,
-                        owner=stack['owner'],
-                        project=stack['project'],
-                        session=s)
+                    stack['name'][0],
+                    float(z),
+                    render=dbconnection,
+                    owner=stack['owner'],
+                    project=stack['project'],
+                    session=s)
         except renderapi.errors.RenderError:
             pass
     if stack['db_interface'] == 'mongo':
@@ -226,7 +226,7 @@ def get_resolved_from_z(stack, tform_name, fullsize, order, z):
                 tfjson(refid)) for refid in refids]
             dbconnection2.client.close()
             resolved = renderapi.resolvedtiles.ResolvedTiles(
-                    tilespecs=tspecs, transformList=shared_tforms)
+                tilespecs=tspecs, transformList=shared_tforms)
             del tspecs, shared_tforms
 
     # turn the last transform of every tilespec into an AlignerTransform
@@ -262,7 +262,7 @@ def get_resolved_tilespecs(
     t0 = time.time()
     if stack['db_interface'] == 'file':
         resolved = renderapi.resolvedtiles.ResolvedTiles(
-                json=jsongz.load(stack['input_file']))
+            json=jsongz.load(stack['input_file']))
         resolved.tilespecs = [t for t in resolved.tilespecs if t.z in zvals]
         ready_transforms(resolved.tilespecs, tform_name, fullsize, order)
     else:
@@ -315,35 +315,35 @@ def get_matches(iId, jId, collection, dbconnection):
             if iId == jId:
                 for name in collection['name']:
                     matches.extend(renderapi.pointmatch.get_matches_within_group(
-                            name,
-                            iId,
-                            owner=collection['owner'],
-                            render=dbconnection,
-                            session=s))
+                        name,
+                        iId,
+                        owner=collection['owner'],
+                        render=dbconnection,
+                        session=s))
             else:
                 for name in collection['name']:
                     matches.extend(
-                            renderapi.pointmatch.get_matches_from_group_to_group(
-                                name,
-                                iId,
-                                jId,
-                                owner=collection['owner'],
-                                render=dbconnection,
-                                session=s))
+                        renderapi.pointmatch.get_matches_from_group_to_group(
+                            name,
+                            iId,
+                            jId,
+                            owner=collection['owner'],
+                            render=dbconnection,
+                            session=s))
     if collection['db_interface'] == 'mongo':
         for dbconn in dbconnection:
             cursor = dbconn.collection.find(
-                    {'pGroupId': iId, 'qGroupId': jId},
-                    {'_id': False})
+                {'pGroupId': iId, 'qGroupId': jId},
+                {'_id': False})
             matches.extend(list(cursor))
             cursor.close()
             if iId != jId:
                 # in principle, this does nothing if zi < zj, but, just in case
                 cursor = dbconn.collection.find(
-                        {
-                            'pGroupId': jId,
-                            'qGroupId': iId},
-                        {'_id': False})
+                    {
+                        'pGroupId': jId,
+                        'qGroupId': iId},
+                    {'_id': False})
                 matches.extend(list(cursor))
                 cursor.close()
         dbconn.client.close()
@@ -372,44 +372,44 @@ def write_chunk_to_file(fname, c, file_weights, rhs):
     fcsr = h5py.File(fname, "w")
 
     indptr_dset = fcsr.create_dataset(
-            "indptr",
-            (c.indptr.size, 1),
-            dtype='int64')
+        "indptr",
+        (c.indptr.size, 1),
+        dtype='int64')
     indptr_dset[:] = (c.indptr).reshape(c.indptr.size, 1)
 
     indices_dset = fcsr.create_dataset(
-            "indices",
-            (c.indices.size, 1),
-            dtype='int64')
+        "indices",
+        (c.indices.size, 1),
+        dtype='int64')
     indices_dset[:] = c.indices.reshape(c.indices.size, 1)
     nrows = indptr_dset.size-1
 
     data_dset = fcsr.create_dataset(
-            "data",
-            (c.data.size,),
-            dtype='float64')
+        "data",
+        (c.data.size,),
+        dtype='float64')
     data_dset[:] = c.data
 
     weights_dset = fcsr.create_dataset(
-            "weights",
-            (file_weights.size,),
-            dtype='float64')
+        "weights",
+        (file_weights.size,),
+        dtype='float64')
     weights_dset[:] = file_weights
 
     for j in np.arange(rhs.shape[1]):
         dsetname = 'rhs_%d' % j
         dset = fcsr.create_dataset(
-                dsetname,
-                (rhs[:, j].size,),
-                dtype='float64')
+            dsetname,
+            (rhs[:, j].size,),
+            dtype='float64')
         dset[:] = rhs[:, j]
 
     # a list of rhs indices (clunky, but works for PETSc to count)
     rhslist = np.arange(rhs.shape[1]).astype('int32')
     dset = fcsr.create_dataset(
-            "rhs_list",
-            (rhslist.size, 1),
-            dtype='int32')
+        "rhs_list",
+        (rhslist.size, 1),
+        dtype='int32')
     dset[:] = rhslist.reshape(rhslist.size, 1)
 
     fcsr.close()
@@ -419,12 +419,12 @@ def write_chunk_to_file(fname, c, file_weights, rhs):
             fname,
             os.path.getsize(fname)/(2.**30)))
     return {
-            "name": os.path.basename(fname),
-            "nnz": c.indices.size,
-            "mincol": c.indices.min(),
-            "maxcol": c.indices.max(),
-            "nrows": nrows
-            }
+        "name": os.path.basename(fname),
+        "nnz": c.indices.size,
+        "mincol": c.indices.min(),
+        "maxcol": c.indices.max(),
+        "nrows": nrows
+    }
 
 
 def write_reg_and_tforms(
@@ -451,67 +451,67 @@ def write_reg_and_tforms(
     """
 
     fname = os.path.join(
-            args['hdf5_options']['output_dir'],
-            'solution_input.h5')
+        args['hdf5_options']['output_dir'],
+        'solution_input.h5')
     with h5py.File(fname, "w") as f:
         for j in np.arange(tforms.shape[1]):
             dsetname = 'x_%d' % j
             dset = f.create_dataset(
-                    dsetname,
-                    (tforms[:, j].size,),
-                    dtype='float64')
+                dsetname,
+                (tforms[:, j].size,),
+                dtype='float64')
             dset[:] = tforms[:, j]
 
         # a list of transform indices (clunky, but works for PETSc to count)
         tlist = np.arange(tforms.shape[1]).astype('int32')
         dset = f.create_dataset(
-                "solve_list",
-                (tlist.size, 1),
-                dtype='int32')
+            "solve_list",
+            (tlist.size, 1),
+            dtype='int32')
         dset[:] = tlist.reshape(tlist.size, 1)
 
         # create a regularization vector
         vec = reg.diagonal()
         dset = f.create_dataset(
-                "reg",
-                (vec.size,),
-                dtype='float64')
+            "reg",
+            (vec.size,),
+            dtype='float64')
         dset[:] = vec
 
         str_type = h5py.special_dtype(vlen=bytes)
 
         rname = os.path.join(
-                os.path.dirname(fname),
-                "resolved.json.gz")
+            os.path.dirname(fname),
+            "resolved.json.gz")
 
         dset = f.create_dataset(
-                "resolved_tiles",
-                (1,),
-                data=os.path.basename(rname))
+            "resolved_tiles",
+            (1,),
+            data=os.path.basename(rname))
 
         jsongz.dump(resolved.to_dict(), rname)
 
         # keep track of input args
         dset = f.create_dataset(
-                "input_args",
-                (1,),
-                dtype=str_type)
+            "input_args",
+            (1,),
+            dtype=str_type)
         dset[:] = json.dumps(args, indent=2)
 
         # metadata
         names = [m['name'] for m in metadata]
         dset = f.create_dataset(
-                "datafile_names",
-                (len(names),),
-                dtype=str_type)
+            "datafile_names",
+            (len(names),),
+            dtype=str_type)
         dset[:] = names
 
         for key in ['nrows', 'nnz', 'mincol', 'maxcol']:
             vals = np.array([m[key] for m in metadata])
             dset = f.create_dataset(
-                    "datafile_" + key,
-                    (vals.size, 1),
-                    dtype='int64')
+                "datafile_" + key,
+                (vals.size, 1),
+                dtype='int64')
             dset[:] = vals.reshape(vals.size, 1)
 
         print('wrote %s' % fname)
@@ -577,9 +577,9 @@ def write_to_new_stack(
         r['solver_args'] = dict(args)
         r['results'] = dict(results)
         output_stack['output_file'] = jsongz.dump(
-                r,
-                output_stack['output_file'],
-                compress=output_stack['compress_output'])
+            r,
+            output_stack['output_file'],
+            compress=output_stack['compress_output'])
         logger.info('wrote {}'.format(output_stack['output_file']))
         return output_stack
 
@@ -597,25 +597,25 @@ def write_to_new_stack(
         zvalues = np.unique(np.array([t.z for t in resolved.tilespecs]))
         for zvalue in zvalues:
             renderapi.stack.delete_section(
-                    output_stack['name'][0],
-                    zvalue,
-                    render=ingestconn)
+                output_stack['name'][0],
+                zvalue,
+                render=ingestconn)
 
     stdeo = get_stderr_stdout(outarg)
     pool = renderapi.client.WithPool
     if (sys.version_info[0] < 3) & (outarg == 'null'):
         pool = pool_pathos.PathosWithPool
     renderapi.client.import_tilespecs_parallel(
-            output_stack['name'][0],
-            resolved.tilespecs,
-            sharedTransforms=resolved.transforms,
-            render=ingestconn,
-            close_stack=False,
-            mpPool=pool,
-            poolsize=args['n_parallel_jobs'],
-            stderr=stdeo,
-            stdout=stdeo,
-            use_rest=output_stack['use_rest'])
+        output_stack['name'][0],
+        resolved.tilespecs,
+        sharedTransforms=resolved.transforms,
+        render=ingestconn,
+        close_stack=False,
+        mpPool=pool,
+        poolsize=args['n_parallel_jobs'],
+        stderr=stdeo,
+        stdout=stdeo,
+        use_rest=output_stack['use_rest'])
 
     return output_stack
 
@@ -680,8 +680,8 @@ def solve(A, weights, reg, x0, rhs):
     mag = np.linalg.norm(err, axis=1)
     results['mag'] = [mag.mean(), mag.std()]
     results['err'] = [
-            [m, e] for m, e in
-            zip(err.mean(axis=0), err.std(axis=0))]
+        [m, e] for m, e in
+        zip(err.mean(axis=0), err.std(axis=0))]
     results['x'] = x
     results['time'] = time.time() - time0
     return results
@@ -726,8 +726,8 @@ def create_or_set_loading(stack):
     if stack['db_interface'] == 'file':
         return
     dbconnection = make_dbconnection(
-            stack,
-            interface='render')
+        stack,
+        interface='render')
     renderapi.stack.create_stack(
         stack['name'][0],
         render=dbconnection)
@@ -743,8 +743,8 @@ def set_complete(stack):
     if stack['db_interface'] == 'file':
         return
     dbconnection = make_dbconnection(
-            stack,
-            interface='render')
+        stack,
+        interface='render')
     renderapi.stack.set_stack_state(
         stack['name'][0],
         state='COMPLETE',
@@ -770,14 +770,14 @@ def get_z_values_for_stack(stack, zvals):
     dbconnection = make_dbconnection(stack)
     if stack['db_interface'] == 'render':
         zstack = renderapi.stack.get_z_values_for_stack(
-                stack['name'][0],
-                render=dbconnection)
+            stack['name'][0],
+            render=dbconnection)
     if stack['db_interface'] == 'mongo':
         zstack = dbconnection.collection.distinct('z')
         dbconnection.client.close()
     if stack['db_interface'] == 'file':
         resolved = renderapi.resolvedtiles.ResolvedTiles(
-                json=jsongz.load(stack['input_file']))
+            json=jsongz.load(stack['input_file']))
         zstack = np.unique([t.z for t in resolved.tilespecs])
 
     ind = np.isin(zvals, zstack)
@@ -797,7 +797,7 @@ def update_tilespecs(resolved, x):
     index = 0
     for i in range(len(resolved.tilespecs)):
         index += resolved.tilespecs[i].tforms[-1].from_solve_vec(
-                x[index:, :])
+            x[index:, :])
     return
 
 
@@ -858,10 +858,14 @@ def blocks_from_tilespec_pair(
         qpts = qpts[ind, :]
         w = w[ind]
 
+    if matrix_assembly['balanced']:
+        weight_sum = np.sum(w)
+        w = [i/weight_sum for i in w]
+
     pblock, weights, prhs = ptspec.tforms[-1].block_from_pts(
-            ppts, w, pcol, ncol)
+        ppts, w, pcol, ncol)
     qblock, _, qrhs = qtspec.tforms[-1].block_from_pts(
-            qpts, w, qcol, ncol)
+        qpts, w, qcol, ncol)
 
     return pblock, qblock, weights, qrhs - prhs
 
@@ -894,9 +898,9 @@ def concatenate_results(results):
 
     A = sparse.vstack([r['block'] for r in results[ind]])
     weights = sparse.diags(
-                [np.concatenate([r['weights'] for r in results[ind]])],
-                [0],
-                format='csr')
+        [np.concatenate([r['weights'] for r in results[ind]])],
+        [0],
+        format='csr')
     rhs = np.concatenate([r.pop('rhs') for r in results[ind]])
     zlist = np.concatenate([r.pop('zlist') for r in results[ind]])
 
@@ -930,9 +934,9 @@ def transform_match(match, ptspec, qtspec, apply_list, tforms):
         for tspec, pq in zip([ptspec, qtspec], ['p', 'q']):
             try:
                 dst = renderapi.transform.estimate_dstpts(
-                        [tspec.tforms[i] for i in apply_list],
-                        src=np.array(match['matches'][pq]).transpose(),
-                        reference_tforms=tforms)
+                    [tspec.tforms[i] for i in apply_list],
+                    src=np.array(match['matches'][pq]).transpose(),
+                    reference_tforms=tforms)
             except IndexError:
                 logger.error("argument apply_list is {} but the tilespec "
                              " for {} has tforms of length {}.".format(
