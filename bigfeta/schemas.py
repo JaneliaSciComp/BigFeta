@@ -146,21 +146,15 @@ class matrix_assembly(DefaultSchema):
         default=True,
         required=False,
         description='cross section point match weighting fades with z')
-        balanced = Boolean(
-        default=False,
-        required=False,
-        description='Set existing weights to all be the same')
-      
     balanced = Boolean(
         default=False,
         required=False,
         description='Set existing weights to all be the same')
-    
+
     @mm.post_load
     def validate_data(self, data):
         if data['choose_random'] and data['choose_best']:
             raise mm.ValidationError("Can't choose both random and best")
-
 
 
 class regularization(DefaultSchema):
