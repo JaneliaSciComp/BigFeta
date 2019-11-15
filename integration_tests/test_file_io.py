@@ -55,7 +55,7 @@ def solved_montage(render, raw_stack, montage_pointmatches):
     p = copy.deepcopy(montage_parameters)
     p['input_stack']['name'] = raw_stack
     p['output_stack']['name'] = 'solver_output_stack'
-    p['pointmatch']['name'] = montage_pointmatches
+    p['pointmatch']['name'] = list(montage_pointmatches)
     mod = bigfeta.BigFeta(input_data=p, args=[])
     mod.run()
     yield mod
