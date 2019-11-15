@@ -1,6 +1,6 @@
 import pytest
 from bigfeta.utils import (
-        blocks_from_tilespec_pair, ready_transforms)
+    blocks_from_tilespec_pair, ready_transforms)
 import numpy as np
 import os
 import json
@@ -10,9 +10,9 @@ import copy
 
 dname = os.path.dirname(os.path.abspath(__file__))
 FILE_PMS = os.path.join(
-        dname, 'test_files', 'montage_pointmatches.json')
+    dname, 'test_files', 'montage_pointmatches.json')
 FILE_TSP = os.path.join(
-        dname, 'test_files', 'montage_raw_tilespecs.json')
+    dname, 'test_files', 'montage_raw_tilespecs.json')
 
 
 @pytest.fixture(scope='module')
@@ -39,10 +39,11 @@ def test_sparse_block(matches, tilespecs):
     qcol = 789
 
     ma = {
-            'npts_min': 5,
-            'npts_max': 500,
-            'choose_random': False
-            }
+        'npts_min': 5,
+        'npts_max': 500,
+        'choose_best': False,
+        'choose_random': False
+    }
 
     for match in matches:
         if not ((match['pGroupId'] in tids) & (match['qGroupId'] in tids)):
@@ -53,13 +54,13 @@ def test_sparse_block(matches, tilespecs):
         qspec = tilespecs[qi]
 
         pblock, qblock, weights, rhs = blocks_from_tilespec_pair(
-                pspec,
-                qspec,
-                match,
-                pcol,
-                qcol,
-                ncol,
-                ma)
+            pspec,
+            qspec,
+            match,
+            pcol,
+            qcol,
+            ncol,
+            ma)
 
         assert pblock.shape == qblock.shape == \
             (len(match['matches']['w']), ncol)
@@ -85,10 +86,11 @@ def test_sparse_npts(matches, tilespecs, random):
     qcol = 789
 
     ma = {
-            'npts_min': 5,
-            'npts_max': 100,
-            'choose_random': random
-            }
+        'npts_min': 5,
+        'npts_max': 100,
+        'choose_best': False,
+        'choose_random': random
+    }
 
     nz = 1
     fmatches[nz]['matches']['w'] = [0] * len(fmatches[nz]['matches']['w'])
@@ -111,13 +113,13 @@ def test_sparse_npts(matches, tilespecs, random):
         qspec = tilespecs[qi]
 
         pblock, qblock, weights, rhs = blocks_from_tilespec_pair(
-                pspec,
-                qspec,
-                match,
-                pcol,
-                qcol,
-                ncol,
-                ma)
+            pspec,
+            qspec,
+            match,
+            pcol,
+            qcol,
+            ncol,
+            ma)
 
         if np.all(np.array(match['matches']['w']) == 0):
             for x in [pblock, qblock, weights, rhs]:
