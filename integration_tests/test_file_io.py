@@ -39,7 +39,7 @@ def raw_stack(render):
 
 @pytest.fixture(scope='module')
 def montage_pointmatches(render):
-    test_montage_collection = ['montage_collection']
+    test_montage_collection = 'montage_collection'
     pms_from_json = []
     with open(FILE_PMS, 'r') as f:
         pms_from_json = json.load(f)
