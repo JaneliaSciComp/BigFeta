@@ -321,22 +321,14 @@ def get_matches(iId, jId, collection, dbconnection):
                         owner=collection['owner'],
                         render=dbconnection,
                         session=s))
+                    if 'max_per_collection' in collection:
+                        temp_matches = max_per_collection(temp_matches, collection["max_per_collection"][i]])
                     if 'collection_weights' in collection:
                         cw = collection['collection_weights'][i]
                     else:
                         cw = 1
-                    for m in temp_matches:
-                        if 'matches' in m:
-                            if 'w' not in m['matches']:
-                                if 'matchCount' in m:
-                                    m['matches']['w'] = [cw]*m['matchCount']
-                                else:
-                                    m['matches']['w'] = [cw] * \
-                                        len(m['matches']['p'][0])
-                            elif cw != 1:
-                                m['matches']['w'] = [
-                                    w*cw for w in m['matches']['w']]
-                    matches.extend(temp_matches)
+
+                    matches.extend(weight_matches(temp_matches))
             else:
                 for i, name in enumerate(collection['name']):
                     temp_matches = []
@@ -349,32 +341,22 @@ def get_matches(iId, jId, collection, dbconnection):
                             render=dbconnection,
                             session=s))
                     if 'collection_weights' in collection:
-                        cw = collection['collection_weights'][i]
+                        cw=collection['collection_weights'][i]
                     else:
-                        cw = 1
-                    for m in temp_matches:
-                        if 'matches' in m:
-                            if 'w' not in m['matches']:
-                                if 'matchCount' in m:
-                                    m['matches']['w'] = [cw]*m['matchCount']
-                                else:
-                                    m['matches']['w'] = [cw] * \
-                                        len(m['matches']['p'][0])
-                            elif cw != 1:
-                                m['matches']['w'] = [
-                                    w*cw for w in m['matches']['w']]
-                    matches.extend(temp_matches)
+                        cw=1
+
+                    matches.extend(weight_matches(temp_matches))
 
     if collection['db_interface'] == 'mongo':
         for dbconn in dbconnection:
-            cursor = dbconn.collection.find(
+            cursor=dbconn.collection.find(
                 {'pGroupId': iId, 'qGroupId': jId},
                 {'_id': False})
             matches.extend(list(cursor))
             cursor.close()
             if iId != jId:
                 # in principle, this does nothing if zi < zj, but, just in case
-                cursor = dbconn.collection.find(
+                cursor=dbconn.collection.find(
                     {
                         'pGroupId': jId,
                         'qGroupId': iId},
@@ -382,12 +364,71 @@ def get_matches(iId, jId, collection, dbconnection):
                 matches.extend(list(cursor))
                 cursor.close()
         dbconn.client.close()
-    message = ("\n %d matches for section1=%s section2=%s "
+    message=("\n %d matches for section1=%s section2=%s "
                "in pointmatch collection" % (len(matches), iId, jId))
     logger.debug(message)
 
     return matches
 
+
+def weight_matches(matches, cw):
+    """Weights matches by collection weight
+
+    Parameters
+    ----------
+    matches : list
+        List of pointmatch elements
+
+    cw : float
+        Value of the collection weight
+
+    Returns
+    -------
+
+    matches : list
+        matches with weights updated
+    """
+
+    for m in matches:
+        if 'matches' in m:
+            if 'w' not in m['matches']:
+                if 'matchCount' in m:
+                    m['matches']['w'] = [cw]*m['matchCount']
+                else:
+                    m['matches']['w'] = [cw] * \
+                        len(m['matches']['p'][0])
+            elif cw != 1:
+                m['matches']['w'] = [
+                    w*cw for w in m['matches']['w']]
+    return matches
+
+def max_per_collection(matches, nmax):
+    """Get nmax matches randomly from the collection
+    
+    Parameters
+    ----------
+    matches : list
+        List of pointmatch elements
+
+    nmax : int
+        Number of elements to get
+    
+    Returns
+    -------
+
+    matches : list
+        matches limited to nmax matches per tilepair
+    """
+
+    for m in matches:
+        if 'matches' in m:
+            inds=np.random.permutation(len(m['matches']['p'][0]))[:nmax]
+            m['matches']['p'][0] = m['matches']['p'][0][inds]
+            m['matches']['p'][1] = m['matches']['p'][1][inds]
+            m['matches']['q'][0] = m['matches']['q'][0][inds]
+            m['matches']['q'][1] = m['matches']['q'][1][inds]
+            m['matches']['w'] = m['matches']['w'][inds]
+    return matches
 
 def write_chunk_to_file(fname, c, file_weights, rhs):
     """write a sub-matrix to an hdf5 file for an external solve
@@ -892,12 +933,17 @@ def blocks_from_tilespec_pair(
                 # Otherwise we may end up biasing it
                 ind = ind[np.argsort(w[ind], kind='mergesort')]
             ind = ind[0:matrix_assembly['npts_max']]
+        elif matrix_assembly['choose_weighted']:
+            ind = np.random.choice(ppts.shape[0], matrix_assembly['npts_max'], replace=False, p=w)
         else:
             ind = np.arange(matrix_assembly['npts_max'])
 
         ppts = ppts[ind, :]
         qpts = qpts[ind, :]
         w = w[ind]
+
+    if matrix_assembly['equal_weight']:
+        w = [1]*len(w)
 
     if matrix_assembly['balanced']:
         weight_sum = np.sum(w)

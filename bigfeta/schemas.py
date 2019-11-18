@@ -142,6 +142,10 @@ class matrix_assembly(DefaultSchema):
         default=False,
         required=False,
         description=("choose highest weighted points first then random"))
+    choose_weighted = Boolean(
+        default=False,
+        required=False,
+        description=("choose randomly but weighted by weight"))
     inverse_dz = Boolean(
         default=True,
         required=False,
@@ -149,12 +153,17 @@ class matrix_assembly(DefaultSchema):
     balanced = Boolean(
         default=False,
         required=False,
-        description='Set existing weights to all be the same')
+        description='Set weights between tiles to sum to constant amount')
+    equal_weight = Boolean(
+        default=False,
+        required=False,
+        description='Set all point matches to have same weight')
 
     @mm.post_load
     def validate_data(self, data):
-        if data['choose_random'] and data['choose_best']:
-            raise mm.ValidationError("Can't choose both random and best")
+        if (data['choose_random'] + data['choose_best'] + data['choose_weighted']) > 0:
+            raise mm.ValidationError(
+                "Can't have more than one of choose_random, choose_best and choose_weighted")
 
 
 class regularization(DefaultSchema):
@@ -209,11 +218,22 @@ class pointmatch(input_db):
         description=("Weights of the collections")
     )
 
+    max_per_collection = List(
+        Int,
+        cli_as_single_argument=True,
+        required=False,
+        description=("Limit to nmax randomly selected points")
+    )
+
     @mm.pre_load
     def tolist(self, data):
         if "collection_weights" in data:
             if not isinstance(data['collection_weights'], list):
                 data['collection_weights'] = [data['collection_weights']]
+        if "max_per_collection" in data:
+            if not isinstance(data['max_per_collection'], list):
+                data['max_per_collection'] = [
+                    data['max_per_collection']]*len(data['name'])
 
     @mm.post_load
     def validate_data(self, data):
